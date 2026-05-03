@@ -14,42 +14,59 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.iptv.player.model.Channel
 import com.iptv.player.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(channel: Channel?, channelList: List<Channel>, onBack: () -> Unit, onChannelSelected: (Channel) -> Unit) {
     var currentChannel by remember { mutableStateOf(channel) }
     var showPlaylist by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    
     val player = remember {
-        ExoPlayer.Builder(androidx.compose.ui.platform.LocalContext.current).build().apply { playWhenReady = true }
+        ExoPlayer.Builder(context).build()
+    }
+    
+    LaunchedEffect(player) {
+        player.playWhenReady = true
     }
 
     LaunchedEffect(currentChannel) {
-        currentChannel?.let { player.setMediaItem(MediaItem.fromUri(Uri.parse(it.primaryUrl))); player.prepare() }
+        currentChannel?.let {
+            val mediaItem = MediaItem.fromUri(Uri.parse(it.primaryUrl))
+            player.setMediaItem(mediaItem)
+            player.prepare()
+        }
     }
-    DisposableEffect(Unit) { onDispose { player.release() } }
+    
+    DisposableEffect(Unit) {
+        onDispose { player.release() }
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                AndroidView(factory = { ctx ->
-                    PlayerView(ctx).apply {
-                        this.player = this@PlayerScreen.player; useController = true; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        setBackgroundColor(android.graphics.Color.BLACK)
-                    }
-                }, modifier = Modifier.fillMaxSize())
+                AndroidView(
+                    factory = { ctx ->
+                        PlayerView(ctx).apply {
+                            this.player = this@PlayerScreen.player
+                            useController = true
+                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                            setBackgroundColor(android.graphics.Color.BLACK)
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
                 
                 Surface(modifier = Modifier.align(Alignment.TopStart).padding(12.dp), color = Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(8.dp)) {
                     Text(currentChannel?.name ?: "", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))

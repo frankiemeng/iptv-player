@@ -37,7 +37,6 @@ fun ChannelListScreen(onPlayChannel: (Channel) -> Unit, repo: PlaylistRepository
     var selectedGroup by remember { mutableStateOf<String?>("全部") }
     var searchQuery by remember { mutableStateOf("") }
     var showUrlDialog by remember { mutableStateOf(false) }
-    var showLocalPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         channels = repo.loadChannels()
@@ -46,7 +45,6 @@ fun ChannelListScreen(onPlayChannel: (Channel) -> Unit, repo: PlaylistRepository
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().background(DarkBackground)) {
-            // Top bar
             Surface(modifier = Modifier.fillMaxWidth(), color = DarkSurface, shadowElevation = 4.dp) {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically) {
@@ -81,15 +79,27 @@ fun ChannelListScreen(onPlayChannel: (Channel) -> Unit, repo: PlaylistRepository
             } else {
                 SearchBar(query = searchQuery, onQueryChange = { searchQuery = it }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
                 
-                // Group chips
                 val groupNames = remember(groups) { listOf("全部") + groups.keys.sorted() }
                 LazyRow(modifier = Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(groupNames) { group ->
-                        FilterChip(selected = selectedGroup == group, onClick = { selectedGroup = group },
-                            label = { Text("$group${if (group != "全部") " (${groups[group]?.size ?: 0})" else " (${channels.size})"}", fontSize = 12.sp) },
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = PrimaryBlue.copy(alpha = 0.2f), selectedLabelColor = PrimaryBlue),
-                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = selectedGroup == group,
-                                borderColor = DarkSurfaceVariant, selectedBorderColor = PrimaryBlue.copy(alpha = 0.5f)))
+                        val isSelected = selectedGroup == group
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedGroup = group },
+                            label = {
+                                Text("$group${if (group != "全部") " (${groups[group]?.size ?: 0})" else " (${channels.size})"}", fontSize = 12.sp)
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryBlue.copy(alpha = 0.2f),
+                                selectedLabelColor = PrimaryBlue
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = DarkSurfaceVariant,
+                                selectedBorderColor = PrimaryBlue.copy(alpha = 0.5f)
+                            )
+                        )
                     }
                 }
                 Spacer(Modifier.height(4.dp))

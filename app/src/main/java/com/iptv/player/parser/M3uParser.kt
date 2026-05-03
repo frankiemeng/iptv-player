@@ -22,7 +22,7 @@ object M3uParser {
         }.start()
     }
 
-    fun parseFromFile(file: File): Playlist = parseM3uContent(FileReader(file).use { it.readText() }, PlaylistSource.Local(file.absolutePath))
+    fun parseFromFile(file: File): Playlist = parseM3uContent(file.readText(), PlaylistSource.Local(file.absolutePath))
 
     fun parseFromString(content: String): Playlist = parseM3uContent(content, PlaylistSource.Url(""))
 
@@ -47,7 +47,6 @@ object M3uParser {
                     i++
                 }
                 if (name.isNotEmpty() && urls.isNotEmpty()) {
-                    // Clean name: remove [HD] [BD] etc prefix
                     val cleanName = name.replace(Regex("""^\[(HD|BD|SD|VGA)\]\s*"""), "")
                         .replace(Regex("""\s*\[geo-blocked\]"""), "")
                         .replace(Regex("""\s*\*[a-z0-9]+\s*$"""), "").trim()
@@ -56,9 +55,5 @@ object M3uParser {
             } else i++
         }
         return Playlist(channels = channels, source = source)
-    }
-
-    private class FileReader(file: File) {
-        val readText: () -> String = { file.readText() }
     }
 }
