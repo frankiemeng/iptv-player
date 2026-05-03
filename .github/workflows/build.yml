@@ -1,4 +1,4 @@
-name: Build IPTV Player APK
+name: Build StarIPTV APK
 
 on:
   push: { branches: [main, master] }
@@ -16,33 +16,45 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 🛠️ Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: 34.0.0
+      - name: 🛠️ Install Android SDK cmdline-tools
+        run: |
+          mkdir -p $HOME/android/cmdline-tools
+          cd $HOME/android/cmdline-tools
+          curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          rm cmdline-tools.zip
+          echo "$HOME/android/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          yes | $HOME/android/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android --licenses > /dev/null 2>&1 || true
 
-      - name: 🏗️ Set up Gradle
+      - name: 🎯 Install required SDK components
+        run: |
+          export ANDROID_HOME=$HOME/android
+          # Install platforms and build tools
+          $HOME/android/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-34" "build-tools;34.0.0" > /dev/null 2>&1 || true
+          # Ensure platform is installed
+          ls $ANDROID_HOME/platforms/ || echo "No platforms yet"
+
+      - name: :wrench: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 8.5
 
       - name: 📦 Check project files
         run: |
-          echo "=== Project structure ==="
           find . -not -path './.git/*' -type f | sort
-          echo "=== Build file ==="
-          cat app/build.gradle.kts
+          echo "---"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls $ANDROID_HOME/ 2>/dev/null || echo "No ANDROID_HOME"
 
       - name: 🔨 Build Debug APK
         run: gradle assembleDebug
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
 
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: IPTV-Player-APK
+          name: StarIPTV-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
